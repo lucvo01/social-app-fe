@@ -56,6 +56,7 @@ function LoginPage() {
         navigate(from, { replace: true });
       });
     } catch (error) {
+      console.log("login error", error);
       reset();
       setError("responseError", error);
     }
