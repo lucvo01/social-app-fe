@@ -14,7 +14,6 @@ function PostList({ userId }) {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    console.log("userID", userId);
     if (userId) dispatch(getPosts({ userId, page }));
   }, [dispatch, userId, page]);
 

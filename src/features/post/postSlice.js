@@ -5,7 +5,7 @@ import { POSTS_PER_PAGE } from "../../app/config";
 const initialState = {
   isLoading: false,
   error: null,
-  postById: {},
+  postsById: {},
   currentPagePosts: []
 };
 
@@ -34,7 +34,7 @@ const slice = createSlice({
       state.error = null;
       const { count, posts } = action.payload;
       posts.forEach((post) => {
-        state.postById[post._id] = post;
+        state.postsById[post._id] = post;
         if (!state.currentPagePosts.includes(post._id)) {
           state.currentPagePosts.push(post._id);
         }
