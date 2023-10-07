@@ -1,6 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 import apiService from "../../app/apiService";
 import { POSTS_PER_PAGE } from "../../app/config";
+import { toast } from "react-toastify";
 
 const initialState = {
   isLoading: false,
@@ -40,6 +41,12 @@ const slice = createSlice({
         }
       });
       state.totalPosts = count;
+    },
+    sendPostReactionSuccess(state, action) {
+      state.isLoading = false;
+      state.error = null;
+      const { postId, reactions } = action.payload;
+      state.postsById[postId].reactions = reactions;
     }
   }
 });
@@ -68,6 +75,28 @@ export const getPosts =
       dispatch(slice.actions.getPostsSuccess(response.data));
     } catch (error) {
       dispatch(slice.actions.hasError(error));
+    }
+  };
+
+export const sendPostReaction =
+  ({ postId, emoji }) =>
+  async (dispatch) => {
+    dispatch(slice.actions.startLoading());
+    try {
+      const response = await apiService.post(`/reactions`, {
+        targetType: "Post",
+        targetId: postId,
+        emoji
+      });
+      dispatch(
+        slice.actions.sendPostReactionSuccess({
+          postId,
+          reactions: response.data
+        })
+      );
+    } catch (error) {
+      dispatch(slice.actions.hasError(error.message));
+      toast.error(error.message);
     }
   };
 
