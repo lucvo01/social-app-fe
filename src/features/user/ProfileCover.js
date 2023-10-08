@@ -1,6 +1,6 @@
 import React from "react";
 
-function ProfileCover() {
+function ProfileCover({ profile }) {
   return <div>ProfileCover</div>;
 }
 
