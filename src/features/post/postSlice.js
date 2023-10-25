@@ -1,7 +1,9 @@
 import { createSlice } from "@reduxjs/toolkit";
+import { toast } from "react-toastify";
 import apiService from "../../app/apiService";
 import { POSTS_PER_PAGE } from "../../app/config";
-import { toast } from "react-toastify";
+import { cloudinaryUpload } from "../../utils/cloudinary";
+import { getCurrentUserProfile } from "../user/userSlice";
 
 const initialState = {
   isLoading: false,
@@ -21,6 +23,21 @@ const slice = createSlice({
       state.isLoading = false;
       state.error = action.payload;
     },
+    resetPosts(state, action) {
+      state.postsById = {};
+      state.currentPagePosts = [];
+    },
+    getPostsSuccess(state, action) {
+      state.isLoading = false;
+      state.error = null;
+      const { posts, count } = action.payload;
+      posts.forEach((post) => {
+        state.postsById[post._id] = post;
+        if (!state.currentPagePosts.includes(post._id))
+          state.currentPagePosts.push(post._id);
+      });
+      state.totalPosts = count;
+    },
     createPostSuccess(state, action) {
       state.isLoading = false;
       state.error = null;
@@ -30,45 +47,25 @@ const slice = createSlice({
       state.postsById[newPost._id] = newPost;
       state.currentPagePosts.unshift(newPost._id);
     },
-    getPostsSuccess(state, action) {
-      state.isLoading = false;
-      state.error = null;
-      const { count, posts } = action.payload;
-      posts.forEach((post) => {
-        state.postsById[post._id] = post;
-        if (!state.currentPagePosts.includes(post._id)) {
-          state.currentPagePosts.push(post._id);
-        }
-      });
-      state.totalPosts = count;
-    },
     sendPostReactionSuccess(state, action) {
       state.isLoading = false;
       state.error = null;
       const { postId, reactions } = action.payload;
       state.postsById[postId].reactions = reactions;
     },
-    resetPosts(state, action) {
-      state.postsById = {};
-      state.currentPagePosts = [];
+    editPostSuccess(state, action) {
+      state.isLoading = false;
+      state.error = null;
+      const { postId } = action.payload;
+      state.postsById[postId] = action.payload;
     }
   }
 });
 
-export const createPost =
-  ({ content, image }) =>
-  async (dispatch) => {
-    dispatch(slice.actions.startLoading());
-    try {
-      const response = await apiService.post("/posts", { content, image });
-      dispatch(slice.actions.createPostSuccess(response.data));
-    } catch (error) {
-      dispatch(slice.actions.hasError(error));
-    }
-  };
+export default slice.reducer;
 
 export const getPosts =
-  ({ userId, page, limit = 2 }) =>
+  ({ userId, page = 1, limit = POSTS_PER_PAGE }) =>
   async (dispatch) => {
     dispatch(slice.actions.startLoading());
     try {
@@ -79,7 +76,28 @@ export const getPosts =
       if (page === 1) dispatch(slice.actions.resetPosts());
       dispatch(slice.actions.getPostsSuccess(response.data));
     } catch (error) {
-      dispatch(slice.actions.hasError(error));
+      dispatch(slice.actions.hasError(error.message));
+      toast.error(error.message);
+    }
+  };
+
+export const createPost =
+  ({ content, image }) =>
+  async (dispatch) => {
+    dispatch(slice.actions.startLoading());
+    try {
+      // upload image to cloudinary
+      const imageUrl = await cloudinaryUpload(image);
+      const response = await apiService.post("/posts", {
+        content,
+        image: imageUrl
+      });
+      dispatch(slice.actions.createPostSuccess(response.data));
+      toast.success("Post successfully");
+      dispatch(getCurrentUserProfile());
+    } catch (error) {
+      dispatch(slice.actions.hasError(error.message));
+      toast.error(error.message);
     }
   };
 
@@ -105,4 +123,37 @@ export const sendPostReaction =
     }
   };
 
-export default slice.reducer;
+export const deletePost =
+  ({ userId, postId, authorId }) =>
+  async (dispatch) => {
+    dispatch(slice.actions.startLoading());
+    try {
+      await apiService.delete(`/posts/${postId}`);
+      toast.success("Delete successfully");
+      dispatch(getCurrentUserProfile());
+      dispatch(getPosts({ userId }));
+    } catch (error) {
+      dispatch(slice.actions.hasError(error.message));
+      toast.error(error.message);
+    }
+  };
+
+export const editPost =
+  ({ userId, postId, authorId, content, image }) =>
+  async (dispatch) => {
+    dispatch(slice.actions.startLoading());
+    try {
+      // upload image to cloudinary
+      const imageUrl = await cloudinaryUpload(image);
+      await apiService.put(`/posts/${postId}`, {
+        content,
+        image: imageUrl
+      });
+      toast.success("Edit successfully");
+      dispatch(getCurrentUserProfile());
+      dispatch(getPosts({ userId }));
+    } catch (error) {
+      dispatch(slice.actions.hasError(error.message));
+      toast.error(error.message);
+    }
+  };

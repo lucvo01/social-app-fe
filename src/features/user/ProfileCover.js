@@ -1,6 +1,6 @@
 import { styled } from "@mui/material/styles";
 import { Avatar, Box, Typography } from "@mui/material";
-import { alpha } from "@mui/material/styles";
+// import { alpha } from "@mui/material/styles";
 import useAuth from "../../hooks/useAuth";
 import ActionButton from "../friend/ActionButton";
 import FriendStatus from "../friend/FriendStatus";
@@ -8,7 +8,7 @@ import FriendStatus from "../friend/FriendStatus";
 const RootStyle = styled("div")(({ theme }) => ({
   "&:before": {
     backdropFilter: `blur(1px)`,
-    backgroundColor: alpha(theme.palette.primary.darker, 0.7),
+    // backgroundColor: alpha(theme.palette.primary.darker, 0.7),
     top: 0,
     zIndex: 9,
     content: "''",
